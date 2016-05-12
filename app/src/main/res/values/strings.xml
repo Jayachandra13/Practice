@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Practice</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_parcelable">ParcelableActivity</string>
+    <string name="title_activity_get_parcelable">GetParcelableActivity</string>
+    <string name="title_activity_end_less_rcv">EndLessRcvActivity</string>
+    <string name="title_activity_end_less_rcv_with_volley">EndLessRcvWithVolley</string>
+    <string name="title_activity_retrofit">RetrofitActivity</string>
+</resources>
