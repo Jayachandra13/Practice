@@ -52,23 +52,32 @@ public interface RetrofitService {
 
     @GET("/skincare.php")
     Call<List<Skin>> getSkinData();
+
     // @POST("/practice/insert.php")
     // Call<ResponseBody> postPersonData(@Body Person person);
     @FormUrlEncoded
     @POST("/insertsampleregister.php")
-    Call<ResponseBody> postPersonData(
-            @FieldMap Map<String, String> values
-    );
-   // @FormUrlEncoded
-    @POST("/practice/insert.php")
-    Call<ResponseBody> runInsertFile(
+    Call<ResponseBody> postPersonData(@FieldMap Map<String, String> values);
 
-           // @FieldMap  Map<String,String> values
-           @Body Person person
-    );
-    @POST("/practice/insertx.php")Call<ResponseBody> runInsertX();
-    @POST("/practice/insert.php")Call<ResponseBody> runInsertObject(@Body Person person);
-    @FormUrlEncoded @POST("/practice/insert.php")Call<ResponseBody> runInsertMap(@FieldMap Map<String,String> map);
-    @FormUrlEncoded @POST("/practice/insert.php")Call<ResponseBody> runInsertFields(@Field("id") String id,@Field("fname") String fname,@Field("lname") String lname,@Field("age") String age,@Field("filepath") String filepath,@Field("dt") String dt);
-    @Multipart @POST("/practice/upload_image.php")Call<ResponseBody> runUploadImage(@Part("id") RequestBody id, @Part("fname") RequestBody fname, @Part("lname") RequestBody lname, @Part("age") RequestBody age, @Part MultipartBody.Part filepath, @Part("dt") RequestBody dt);
+    // @FormUrlEncoded
+    @POST("/practice/insert.php")
+    Call<ResponseBody> runInsertFile(@Body Person person);
+
+    @POST("/practice/insertx.php")
+    Call<ResponseBody> runInsertX();
+
+    @POST("/practice/insert.php")
+    Call<ResponseBody> runInsertObject(@Body Person person);
+
+    @FormUrlEncoded
+    @POST("/practice/insert.php")
+    Call<ResponseBody> runInsertMap(@FieldMap Map<String, String> map);
+
+    @FormUrlEncoded
+    @POST("/practice/insert.php")
+    Call<ResponseBody> runInsertFields(@Field("id") String id, @Field("fname") String fname, @Field("lname") String lname, @Field("age") String age, @Field("filepath") String filepath, @Field("dt") String dt);
+
+    @Multipart
+    @POST("/practice/upload_image.php")
+    Call<ResponseBody> runUploadImage(@Part("id") RequestBody id, @Part("fname") RequestBody fname, @Part("lname") RequestBody lname, @Part("age") RequestBody age, @Part MultipartBody.Part filepath, @Part("dt") RequestBody dt);
 }

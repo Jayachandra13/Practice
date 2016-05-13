@@ -29,12 +29,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
+import com.bumptech.glide.DrawableRequestBuilder;
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.jc.practice.ServiceCall.ServiceGenerator;
 import com.jc.practice.adapter.RcvRetrofitAdapter;
 import com.jc.practice.listener.RetrofitService;
 import com.jc.practice.model.Example;
 import com.jc.practice.model.Person;
 import com.jc.practice.model.Skin;
+import com.jc.practice.utils.ImageCompresser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -108,6 +112,7 @@ public class RetrofitActivity extends AppCompatActivity {
     ImageView imgPreView;
     @Bind(R.id.videoPerView)
     VideoView videoPerView;
+    File imageFile;
 
 
     @Override
@@ -166,14 +171,13 @@ public class RetrofitActivity extends AppCompatActivity {
                     Intent int_img_camera = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 //                    startActivityForResult(int_img_camera, IMAGE_FROM_CAMERA);
                     if (int_img_camera.resolveActivity(getPackageManager()) != null) {
-                        File imageFile = createImageFile();
+                        imageFile = createImageFile();
                         if (imageFile != null) {
-                            Log.v("in_put_path",""+imageFile);
+                            Log.v("in_put_path", "" + imageFile);
                             int_img_camera.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(imageFile));
                             startActivityForResult(int_img_camera, IMAGE_FROM_CAMERA);
                         }
                     }
-
                 }
 
             }
@@ -242,33 +246,22 @@ public class RetrofitActivity extends AppCompatActivity {
             cursor.moveToFirst();
             img_path = cursor.getString(cursor_index);
             tvPath.setText(img_path);
-            Bitmap bmap = BitmapFactory.decodeFile(img_path);
-            imgPreView.setImageBitmap(bmap);
+            img_path=ImageCompresser.compressImage(img_path,RetrofitActivity.this);
+            displayImageForPreview(img_path);
             imgPreView.setVisibility(View.VISIBLE);
             videoPerView.setVisibility(View.GONE);
         }
-        if (requestCode == IMAGE_FROM_CAMERA && resultCode == RESULT_OK && data != null) {
-            /*Bitmap bmap = (Bitmap) data.getExtras().get("data");
-            imgPreView.setImageBitmap(bmap);
-            Uri uri = (Uri) data.getExtras().get("data");
-            String path_file = uri.getPath();
-            Log.v("out_put_path", "" + path_file);*/
-            /*Bitmap bmap = (Bitmap) data.getExtras().get("data");
-            //img_view.setImageBitmap(bmap);
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-            String path = MediaStore.Images.Media.insertImage(getApplicationContext().getContentResolver(), bmap, "Title", null);
-            Cursor cursor = getContentResolver().query(Uri.parse(path), null, null, null, null);
-            *//*String[] projection = {MediaStore.Images.Media.DATA};
-            Cursor cursor = getContentResolver().query(data.getData(), projection, null, null, null);*//*
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            cursor.moveToFirst();
-            img_path = cursor.getString(idx);
-            tvPath.setText(img_path + "##" + path);
-//            Bitmap bmapd = BitmapFactory.decodeFile(img_path);
-            imgPreView.setImageBitmap(bmap);
-//            imgPreView.setImageBitmap(bmapd);*/
-            Bitmap bmap = (Bitmap) data.getExtras().get("data");
+        if (requestCode == IMAGE_FROM_CAMERA && resultCode == RESULT_OK/* && data != null*/) {
+            Log.v("getPath", "" + imageFile.getPath());
+            Log.v("getAbsolutePath", "" + imageFile.getAbsolutePath());
+            img_path = imageFile.getAbsolutePath();
+            tvPath.setText(img_path);
+            img_path=ImageCompresser.compressImage(img_path,RetrofitActivity.this);
+            displayImageForPreview(img_path);
+            //imgPreView.setImageBitmap(BitmapFactory.decodeFile(img_path));
+            imgPreView.setVisibility(View.VISIBLE);
+            videoPerView.setVisibility(View.GONE);
+           /* Bitmap bmap = (Bitmap) data.getExtras().get("data");
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
             String path = MediaStore.Images.Media.insertImage(getApplicationContext().getContentResolver(), bmap, "Title", null);
@@ -279,9 +272,7 @@ public class RetrofitActivity extends AppCompatActivity {
             Bitmap bmapd = BitmapFactory.decodeFile(img_path);
             Log.v("img_path", "" + img_path);
             tvPath.setText(img_path);
-            imgPreView.setImageBitmap(bmapd);
-            imgPreView.setVisibility(View.VISIBLE);
-            videoPerView.setVisibility(View.GONE);
+            imgPreView.setImageBitmap(bmapd);*/
         }
         if (requestCode == VIDEO_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
             String[] projection = {MediaStore.Video.Media.DATA};
@@ -347,7 +338,6 @@ public class RetrofitActivity extends AppCompatActivity {
         }
         if (requestCode == DOC && resultCode == RESULT_OK && data != null) {
             doc_path = data.getData().getPath();
-            Toast.makeText(RetrofitActivity.this, doc_path, Toast.LENGTH_LONG).show();
             tvPath.setText(doc_path);
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -364,8 +354,31 @@ public class RetrofitActivity extends AppCompatActivity {
             img_path = file.getAbsolutePath();
         } catch (Exception e) {
             e.printStackTrace();
+            Log.v("createImageFileError", "" + e.getMessage());
         }
         return file;
+    }
+
+    public void displayImageForPreview(String path) {
+        DrawableRequestBuilder<String> thumbnailRequest = Glide
+                .with(this)
+                .load(path);
+        Glide.with(this)
+                .load(path)
+                .placeholder(R.drawable.launcher)
+                .error(R.drawable.ic_up_arrow)
+                .override(200, 150)
+                .fitCenter()
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .skipMemoryCache(true)
+                .thumbnail(thumbnailRequest)
+                .into(imgPreView);
+        //.thumbnail( 0.1f ) first method
+        //NONE,SOURCE,RESULT,ALL default
+        //.skipMemoryCache( true )//false as default
+        //.asGif(); .asBitmap();
+            /*Bitmap bmap = BitmapFactory.decodeFile(img_path);
+            imgPreView.setImageBitmap(bmap);*/
     }
 
     public void getDataUsingRetrofit(String url) {
