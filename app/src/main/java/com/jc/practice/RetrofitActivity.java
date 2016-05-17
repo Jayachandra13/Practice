@@ -1,5 +1,8 @@
 package com.jc.practice;
 
+import android.annotation.TargetApi;
+import android.app.Activity;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
@@ -8,8 +11,10 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
@@ -42,7 +47,9 @@ import com.jc.practice.utils.ImageCompresser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -163,9 +170,12 @@ public class RetrofitActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (which == 0) {
-                    Intent int_img_gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-//                    Intent int_img_gallery = new Intent(Intent.ACTION_GET_CONTENT, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                    startActivityForResult(int_img_gallery, IMAGE_FROM_GALLERY);
+                    /*Intent int_img_gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(int_img_gallery, IMAGE_FROM_GALLERY);*/
+                    Intent intent = new Intent();
+                    intent.setType("image/*");
+                    intent.setAction(Intent.ACTION_GET_CONTENT);
+                    startActivityForResult(Intent.createChooser(intent, "Select:"), IMAGE_FROM_GALLERY);
                 }
                 if (which == 1) {
                     Intent int_img_camera = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
@@ -239,24 +249,68 @@ public class RetrofitActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == IMAGE_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
-            String[] projection = {MediaStore.Images.Media.DATA};
+        if (requestCode == IMAGE_FROM_GALLERY && resultCode == RESULT_OK/* && data != null*/) {
+            Uri selectedImageUri = data.getData();
+            Log.v("selectedImageUri",""+selectedImageUri);
+            String tempPath = getPath(selectedImageUri, RetrofitActivity.this);
+            Log.v("tempPath",""+tempPath);
+            String url = data.getData().toString();
+            Log.v("url",""+url);
+            if (url.startsWith("content://com.google.android.apps.photos.content")){
+                try {
+                    InputStream is = getApplicationContext().getContentResolver().openInputStream(selectedImageUri);
+                    if (is != null) {
+                        Bitmap pictureBitmap = BitmapFactory.decodeStream(is);
+                        //You can use this bitmap according to your purpose or Set bitmap to imageview
+                        imgPreView.setImageBitmap(pictureBitmap);
+                    }
+                } catch (FileNotFoundException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            /*img_path= getPath(selectedImageUri);
+            if(selectedImageUri!=null){
+
+            }else{
+                InputStream is = null;
+                try {
+                    is = getContentResolver().openInputStream(selectedImageUri);
+                    imgPreView.setImageBitmap(BitmapFactory.decodeStream(is));
+                    img_path=selectedImageUri.getPath();
+                    tvPath.setText(img_path);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+
+            }*/
+            /*String[] projection = { MediaStore.Images.Media.DATA };
+            Cursor cursor = getContentResolver().query(selectedImageUri, projection, null, null, null);
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            img_path=cursor.getString(column_index);
+            tvPath.setText(img_path);*/
+            /*img_path = ImageCompresser.compressImage(img_path, RetrofitActivity.this);
+            displayImageForPreview(img_path);*/
+            imgPreView.setVisibility(View.VISIBLE);
+            videoPerView.setVisibility(View.GONE);
+           /* String[] projection = {MediaStore.Images.Media.DATA};
             Cursor cursor = getContentResolver().query(data.getData(), projection, null, null, null);
             int cursor_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
             cursor.moveToFirst();
             img_path = cursor.getString(cursor_index);
             tvPath.setText(img_path);
-            img_path=ImageCompresser.compressImage(img_path,RetrofitActivity.this);
+            img_path = ImageCompresser.compressImage(img_path, RetrofitActivity.this);
             displayImageForPreview(img_path);
             imgPreView.setVisibility(View.VISIBLE);
-            videoPerView.setVisibility(View.GONE);
+            videoPerView.setVisibility(View.GONE);*/
         }
         if (requestCode == IMAGE_FROM_CAMERA && resultCode == RESULT_OK/* && data != null*/) {
             Log.v("getPath", "" + imageFile.getPath());
             Log.v("getAbsolutePath", "" + imageFile.getAbsolutePath());
             img_path = imageFile.getAbsolutePath();
             tvPath.setText(img_path);
-            img_path=ImageCompresser.compressImage(img_path,RetrofitActivity.this);
+            img_path = ImageCompresser.compressImage(img_path, RetrofitActivity.this);
             displayImageForPreview(img_path);
             //imgPreView.setImageBitmap(BitmapFactory.decodeFile(img_path));
             imgPreView.setVisibility(View.VISIBLE);
@@ -342,7 +396,21 @@ public class RetrofitActivity extends AppCompatActivity {
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
-
+    public String getPath(Uri uri, Activity activity) {
+        Cursor cursor = null;
+        try {
+            String[] projection = {MediaStore.MediaColumns.DATA};
+            cursor = activity.getContentResolver().query(uri, projection, null, null, null);
+            if (cursor.moveToFirst()) {
+                int column_index = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
+                return cursor.getString(column_index);
+            }
+        } catch (Exception e) {
+        } finally {
+            cursor.close();
+        }
+        return "";
+    }
     private File createImageFile() {
         File file = null;
         try {
@@ -350,7 +418,7 @@ public class RetrofitActivity extends AppCompatActivity {
             if (!folder.exists()) {
                 folder.mkdir();
             }
-            file = new File(folder.getAbsolutePath().toString() + "/Image_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".jpg");
+            file = new File(folder.getAbsolutePath() + "/Image_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".jpg");
             img_path = file.getAbsolutePath();
         } catch (Exception e) {
             e.printStackTrace();

@@ -126,16 +126,15 @@ public class ImageCompresser {
         }
         FileOutputStream out = null;
 //        String filename = getFilename();
-        String filename = compressimagepath;
         try {
-            out = new FileOutputStream(filename);
+            out = new FileOutputStream(compressimagepath);
             scaledBitmap.compress(Bitmap.CompressFormat.JPEG, 80, out);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
 
-        return filename;
+        return compressimagepath;
 
     }
 

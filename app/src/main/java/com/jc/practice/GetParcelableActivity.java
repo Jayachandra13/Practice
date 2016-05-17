@@ -23,7 +23,6 @@ import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 
 public class GetParcelableActivity extends AppCompatActivity {
-    private Realm myRealm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,7 +40,7 @@ public class GetParcelableActivity extends AppCompatActivity {
         Log.v("empParcelable", "" + emp);
     }
     public void getDataFromRealm(){
-        myRealm = Realm.getInstance(new RealmConfiguration.Builder(GetParcelableActivity.this).name("myRealm.realm").deleteRealmIfMigrationNeeded().build());
+        Realm myRealm = Realm.getInstance(new RealmConfiguration.Builder(GetParcelableActivity.this).name("myRealm.realm").deleteRealmIfMigrationNeeded().build());
         RealmResults<RealmJson> realmResults = myRealm.where(RealmJson.class).findAll();
        //General method from JSON to POJO
        //List<Employee> employeeList=new ArrayList<>();
