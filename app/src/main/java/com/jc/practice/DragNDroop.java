@@ -48,6 +48,7 @@ public class DragNDroop extends AppCompatActivity {
         imgA.setOnLongClickListener(myOnLongClickListener);
         imgB.setOnLongClickListener(myOnLongClickListener);
         imgC.setOnLongClickListener(myOnLongClickListener);
+        Log.v("onCreate","onCreate");
 
         /*imgA.setOnTouchListener(new View.OnTouchListener() {
             @Override
