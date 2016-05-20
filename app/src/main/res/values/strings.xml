@@ -6,4 +6,7 @@
     <string name="title_activity_end_less_rcv">EndLessRcvActivity</string>
     <string name="title_activity_end_less_rcv_with_volley">EndLessRcvWithVolley</string>
     <string name="title_activity_retrofit">RetrofitActivity</string>
+    <string name="imagea">imageA</string>
+    <string name="imageb">imageB</string>
+    <string name="imagec">imageC</string>
 </resources>

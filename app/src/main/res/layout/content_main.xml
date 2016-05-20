@@ -67,6 +67,13 @@
                     android:layout_height="wrap_content"
                     android:text="Quick Dialog"
                     android:textAllCaps="false" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Drag &amp; Droop"
+                    android:id="@+id/btnDragnDroop"
+                    style="?android:attr/buttonBarButtonStyle"/>
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

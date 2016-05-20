@@ -34,6 +34,8 @@ public class MainActivity extends AppCompatActivity {
     Button btnRetrofit;
     @Bind(R.id.btnQuickActionDialog)
     Button btnQuickActionDialog;
+    @Bind(R.id.btnDragnDroop)
+    Button btnDragnDroop;
     MySampleDialogFragment mySampleDialogFragment;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -54,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
-    @OnClick({R.id.btnParcelable, R.id.btnEndLessRcv, R.id.btnEndLessRcvWithVolley, R.id.btnRetrofit, R.id.btnQuickActionDialog})
+    @OnClick({R.id.btnParcelable, R.id.btnEndLessRcv, R.id.btnEndLessRcvWithVolley, R.id.btnRetrofit, R.id.btnQuickActionDialog,R.id.btnDragnDroop})
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btnParcelable:
@@ -74,6 +76,9 @@ public class MainActivity extends AppCompatActivity {
                 mySampleDialogFragment.setAnchorView(btnQuickActionDialog);
                 mySampleDialogFragment.setAligmentFlags(AlignmentFlag.ALIGN_ANCHOR_VIEW_LEFT | AlignmentFlag.ALIGN_ANCHOR_VIEW_BOTTOM);
                 mySampleDialogFragment.show(getSupportFragmentManager(), null);
+                break;
+            case R.id.btnDragnDroop:
+                startActivity(new Intent(MainActivity.this,DragNDroop.class));
                 break;
         }
     }
