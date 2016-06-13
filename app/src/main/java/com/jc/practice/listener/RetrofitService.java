@@ -80,4 +80,13 @@ public interface RetrofitService {
     @Multipart
     @POST("/practice/upload_image.php")
     Call<ResponseBody> runUploadImage(@Part("id") RequestBody id, @Part("fname") RequestBody fname, @Part("lname") RequestBody lname, @Part("age") RequestBody age, @Part MultipartBody.Part filepath, @Part("dt") RequestBody dt);
+    @Multipart
+    @POST("/practice/upload_video.php")
+    Call<ResponseBody> runUploadVideo(@Part("id") RequestBody id, @Part("fname") RequestBody fname, @Part("lname") RequestBody lname, @Part("age") RequestBody age, @Part MultipartBody.Part filepath, @Part("dt") RequestBody dt);
+    @Multipart
+    @POST("/practice/upload_audio.php")
+    Call<ResponseBody> runUploadAudio(@Part("id") RequestBody id, @Part("fname") RequestBody fname, @Part("lname") RequestBody lname, @Part("age") RequestBody age, @Part MultipartBody.Part filepath, @Part("dt") RequestBody dt);
+    @Multipart
+    @POST("/practice/upload_doc.php")
+    Call<ResponseBody> runUploadDoc(@Part("id") RequestBody id, @Part("fname") RequestBody fname, @Part("lname") RequestBody lname, @Part("age") RequestBody age, @Part MultipartBody.Part filepath, @Part("dt") RequestBody dt);
 }

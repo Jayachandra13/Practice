@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MANAGE_DOCUMENTS" />
     <uses-permission android:name="com.android.vending.CHECK_LICENSE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 
     <application
         android:allowBackup="true"
@@ -65,24 +66,21 @@
             android:name=".RetrofitActivity"
             android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
             android:label="@string/title_activity_retrofit"
-            android:theme="@style/ThemeNew">
+            android:theme="@style/ThemeNew"></activity>
 
-            <!--
-            <intent-filter>
-                <action android:name="android.provider.MediaStore.RECORD_SOUND" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            -->
-        </activity>
-        <!--
- ATTENTION: This was auto-generated to add Google Play services to your project for
-     App Indexing.  See https://g.co/AppIndexing/AndroidStudio for more information.
-        -->
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
 
-        <activity android:name=".DragNDroop"></activity>
+        <activity android:name=".DragNDroop" />
+        <activity
+            android:name=".ArcMenuActivity"
+            android:label="@string/title_activity_arc_menu"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".MyLoaderActivity"
+            android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+            android:theme="@style/ThemeNew" />
     </application>
 
 </manifest>

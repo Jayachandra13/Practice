@@ -1,8 +1,10 @@
 package com.jc.practice.adapter;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +31,7 @@ public class MyRcvAdapterVolley extends RecyclerView.Adapter<MyRcvAdapterVolley.
     int visibleThreshold = 2;
     int lastVisibleItem, totalItemCount;
     boolean loading;
+    int cycle=0;
 
     public MyRcvAdapterVolley(Context context, ArrayList<Example> list, RecyclerView recyclerView) {
         this.context = context;
@@ -60,6 +63,13 @@ public class MyRcvAdapterVolley extends RecyclerView.Adapter<MyRcvAdapterVolley.
 
     @Override
     public void onBindViewHolder(ExampleHolder holder, int position) {
+       int pos=position%4;
+        switch (pos){
+            case 1:holder.tvRank.setTextColor(Color.BLUE); break;
+            case 2:holder.tvRank.setTextColor(Color.GREEN); break;
+            case 3:holder.tvRank.setTextColor(Color.RED); break;
+            case 4:holder.tvRank.setTextColor(Color.YELLOW); break;
+        }
         holder.tvRank.setText("Rank   : " + list.get(position).getRank());
         holder.tvTitle.setText("Title : " + list.get(position).getTitle());
 

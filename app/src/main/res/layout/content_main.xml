@@ -19,8 +19,8 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:layout_gravity="center_horizontal">
+            android:layout_gravity="center_horizontal"
+            android:orientation="vertical">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -29,11 +29,11 @@
 
                 <Button
                     android:id="@+id/btnParcelable"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Parcelable"
-                    android:textAllCaps="false"
-                    style="?android:attr/buttonBarButtonStyle"/>
+                    android:textAllCaps="false" />
 
                 <Button
                     android:id="@+id/btnEndLessRcv"
@@ -61,6 +61,7 @@
                     android:layout_height="wrap_content"
                     android:text="Retrofit"
                     android:textAllCaps="false" />
+
                 <Button
                     android:id="@+id/btnQuickActionDialog"
                     android:layout_width="wrap_content"
@@ -69,11 +70,34 @@
                     android:textAllCaps="false" />
 
                 <Button
+                    android:id="@+id/btnDragnDroop"
+                    style="?android:attr/buttonBarButtonStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Drag &amp; Droop"
-                    android:id="@+id/btnDragnDroop"
-                    style="?android:attr/buttonBarButtonStyle"/>
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:id="@+id/btnArcMenu"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Arc Menu"
+                    android:textAllCaps="false" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnLoaders"
+                    style="?android:attr/buttonBarButtonStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Loaders"
+                    android:textAllCaps="false" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

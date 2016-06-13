@@ -36,6 +36,10 @@ public class MainActivity extends AppCompatActivity {
     Button btnQuickActionDialog;
     @Bind(R.id.btnDragnDroop)
     Button btnDragnDroop;
+    @Bind(R.id.btnArcMenu)
+    Button btnArcMenu;
+    @Bind(R.id.btnLoaders)
+    Button btnLoaders;
     MySampleDialogFragment mySampleDialogFragment;
     /**
      * ATTENTION: This was auto-generated to implement the App Indexing API.
@@ -49,14 +53,12 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         setSupportActionBar(toolbar);
-
-
         // ATTENTION: This was auto-generated to implement the App Indexing API.
         // See https://g.co/AppIndexing/AndroidStudio for more information.
         client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
-    @OnClick({R.id.btnParcelable, R.id.btnEndLessRcv, R.id.btnEndLessRcvWithVolley, R.id.btnRetrofit, R.id.btnQuickActionDialog,R.id.btnDragnDroop})
+    @OnClick({R.id.btnParcelable, R.id.btnEndLessRcv, R.id.btnEndLessRcvWithVolley, R.id.btnRetrofit, R.id.btnQuickActionDialog, R.id.btnDragnDroop, R.id.btnArcMenu, R.id.btnLoaders})
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btnParcelable:
@@ -78,7 +80,13 @@ public class MainActivity extends AppCompatActivity {
                 mySampleDialogFragment.show(getSupportFragmentManager(), null);
                 break;
             case R.id.btnDragnDroop:
-                startActivity(new Intent(MainActivity.this,DragNDroop.class));
+                startActivity(new Intent(MainActivity.this, DragNDroop.class));
+                break;
+            case R.id.btnArcMenu:
+                startActivity(new Intent(MainActivity.this, ArcMenuActivity.class));
+                break;
+            case R.id.btnLoaders:
+                startActivity(new Intent(MainActivity.this, MyLoaderActivity.class));
                 break;
         }
     }

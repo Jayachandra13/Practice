@@ -1,7 +1,8 @@
 package com.jc.practice;
 
-import android.annotation.TargetApi;
-import android.app.Activity;
+import android.app.NotificationManager;
+import android.app.ProgressDialog;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -10,20 +11,22 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.media.MediaPlayer;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
-import android.os.Build;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
+import android.webkit.MimeTypeMap;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -40,16 +43,18 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.jc.practice.ServiceCall.ServiceGenerator;
 import com.jc.practice.adapter.RcvRetrofitAdapter;
 import com.jc.practice.listener.RetrofitService;
+import com.jc.practice.listener.UploadCallbacks;
 import com.jc.practice.model.Example;
 import com.jc.practice.model.Person;
 import com.jc.practice.model.Skin;
 import com.jc.practice.utils.ImageCompresser;
+import com.jc.practice.utils.ProgressRequestBody;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -120,7 +125,10 @@ public class RetrofitActivity extends AppCompatActivity {
     @Bind(R.id.videoPerView)
     VideoView videoPerView;
     File imageFile;
-
+    int file_type = 0;
+    ProgressDialog progressDialog;
+    NotificationManager notificationManager;
+    NotificationCompat.Builder notificationBuilder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -146,15 +154,19 @@ public class RetrofitActivity extends AppCompatActivity {
                 fetchPersonData();
                 break;
             case R.id.btnImage:
+                file_type = 1;
                 browseImg();
                 break;
             case R.id.btnVideo:
+                file_type = 2;
                 browseVideo();
                 break;
             case R.id.btnAudio:
+                file_type = 3;
                 browseAudio();
                 break;
             case R.id.btnDoc:
+                file_type = 4;
                 browseDoc();
                 break;
 
@@ -173,8 +185,8 @@ public class RetrofitActivity extends AppCompatActivity {
                      /*Intent int_img_gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
                         startActivityForResult(int_img_gallery, IMAGE_FROM_GALLERY);*/
                     Intent intent = new Intent();
-                    intent.setType("image/*");
                     intent.setAction(Intent.ACTION_GET_CONTENT);
+                    intent.setType("image/*");
                     startActivityForResult(Intent.createChooser(intent, "Choose from"), IMAGE_FROM_GALLERY);
                 }
                 if (which == 1) {
@@ -183,7 +195,6 @@ public class RetrofitActivity extends AppCompatActivity {
                     if (int_img_camera.resolveActivity(getPackageManager()) != null) {
                         imageFile = createImageFile();
                         if (imageFile != null) {
-                            Log.v("in_put_path", "" + imageFile);
                             int_img_camera.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(imageFile));
                             startActivityForResult(int_img_camera, IMAGE_FROM_CAMERA);
                         }
@@ -203,9 +214,13 @@ public class RetrofitActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (which == 0) {
-                    Intent int_video_gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
-//                    Intent int_video_gallery = new Intent(Intent.ACTION_GET_CONTENT, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
-                    startActivityForResult(int_video_gallery, VIDEO_FROM_GALLERY);
+//                    Intent int_video_gallery = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+                    /*Intent int_video_gallery = new Intent(Intent.ACTION_GET_CONTENT, android.provider.MediaStore.Video.Media.EXTERNAL_CONTENT_URI);
+                    startActivityForResult(int_video_gallery, VIDEO_FROM_GALLERY);*/
+                    Intent intent = new Intent();
+                    intent.setAction(Intent.ACTION_GET_CONTENT);
+                    intent.setType("video/*");
+                    startActivityForResult(Intent.createChooser(intent, "Choose from"), VIDEO_FROM_GALLERY);
                 }
                 if (which == 1) {
                     Intent int_video_camera = new Intent(android.provider.MediaStore.ACTION_VIDEO_CAPTURE);
@@ -239,106 +254,44 @@ public class RetrofitActivity extends AppCompatActivity {
     }
 
     public void browseDoc() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        String[] ACCEPT_MIME_TYPES = {
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                "image/gif",
+                "application/pdf",
+                "application/vnd.ms-powerpointtd>",
+                "text/plain",
+                "application/xml",
+                "application/zip, application/x-compressed-zip"
+        };
+        Intent intent = new Intent();
+        intent.setAction(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("*/*");
-//        startActivityForResult(Intent.createChooser(intent, "Select text"), DOC);
-        startActivityForResult(intent, DOC);
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, ACCEPT_MIME_TYPES);
+        startActivityForResult(Intent.createChooser(intent, "Choose from"), DOC);
     }
-    /*Log.v("data", "" + data);
-    Log.v("selectedImageUri", "" + selectedImageUri);
-    Log.v("getPath", "" + selectedImageUri.getPath());*/
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == IMAGE_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
             Uri selectedImageUri = data.getData();
-            try {
-                imgPreView.setImageBitmap(MediaStore.Images.Media.getBitmap(this.getContentResolver(), selectedImageUri));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            String[] projection = {MediaStore.Images.Media.DATA};
-            Cursor cursor = this.getContentResolver().query(selectedImageUri, projection, null, null, null);
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            cursor.moveToFirst();
-            String realPath = cursor.getString(column_index);
-            Log.v("realPath", "" + realPath);
-            Toast.makeText(RetrofitActivity.this, "realPath" + realPath, Toast.LENGTH_LONG).show();
-
-            /*img_path= getPath(selectedImageUri);
-            if(selectedImageUri!=null){
-
-            }else{
-                InputStream is = null;
-                try {
-                    is = getContentResolver().openInputStream(selectedImageUri);
-                    imgPreView.setImageBitmap(BitmapFactory.decodeStream(is));
-                    img_path=selectedImageUri.getPath();
-                    tvPath.setText(img_path);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
-
-            }*/
-            /*String[] projection = { MediaStore.Images.Media.DATA };
-            Cursor cursor = getContentResolver().query(selectedImageUri, projection, null, null, null);
-            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            cursor.moveToFirst();
-            img_path=cursor.getString(column_index);
-            tvPath.setText(img_path);*/
-            /*img_path = ImageCompresser.compressImage(img_path, RetrofitActivity.this);
-            displayImageForPreview(img_path);*/
+            img_path = saveImage(getApplicationContext(), selectedImageUri);
+            displayImageForPreview(img_path);
+            tvPath.setText(img_path);
             imgPreView.setVisibility(View.VISIBLE);
             videoPerView.setVisibility(View.GONE);
-           /* String[] projection = {MediaStore.Images.Media.DATA};
-            Cursor cursor = getContentResolver().query(data.getData(), projection, null, null, null);
-            int cursor_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            cursor.moveToFirst();
-            img_path = cursor.getString(cursor_index);
-            tvPath.setText(img_path);
-            img_path = ImageCompresser.compressImage(img_path, RetrofitActivity.this);
-            displayImageForPreview(img_path);
-            imgPreView.setVisibility(View.VISIBLE);
-            videoPerView.setVisibility(View.GONE);*/
         }
         if (requestCode == IMAGE_FROM_CAMERA && resultCode == RESULT_OK/* && data != null*/) {
-            Log.v("getPath", "" + imageFile.getPath());
-            Log.v("getAbsolutePath", "" + imageFile.getAbsolutePath());
             img_path = imageFile.getAbsolutePath();
             tvPath.setText(img_path);
             img_path = ImageCompresser.compressImage(img_path, RetrofitActivity.this);
             displayImageForPreview(img_path);
-            //imgPreView.setImageBitmap(BitmapFactory.decodeFile(img_path));
             imgPreView.setVisibility(View.VISIBLE);
             videoPerView.setVisibility(View.GONE);
-           /* Bitmap bmap = (Bitmap) data.getExtras().get("data");
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            bmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-            String path = MediaStore.Images.Media.insertImage(getApplicationContext().getContentResolver(), bmap, "Title", null);
-            Cursor cursor = getContentResolver().query(Uri.parse(path), null, null, null, null);
-            cursor.moveToFirst();
-            int idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA);
-            img_path = cursor.getString(idx);
-            Bitmap bmapd = BitmapFactory.decodeFile(img_path);
-            Log.v("img_path", "" + img_path);
-            tvPath.setText(img_path);
-            imgPreView.setImageBitmap(bmapd);*/
         }
         if (requestCode == VIDEO_FROM_GALLERY && resultCode == RESULT_OK && data != null) {
-            String[] projection = {MediaStore.Video.Media.DATA};
-            Cursor cursor = getContentResolver().query(data.getData(), projection, null, null, null);
-            int cursor_index = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DATA);
-            cursor.moveToFirst();
-            video_path = cursor.getString(cursor_index);
-            tvPath.setText(video_path);
-            MediaController media_Controller = new MediaController(RetrofitActivity.this);
-            imgPreView.setVisibility(View.GONE);
-            videoPerView.setVisibility(View.VISIBLE);
-            videoPerView.setMediaController(media_Controller);
-            videoPerView.setVideoPath(video_path);
-            videoPerView.start();
+            final Uri uri = data.getData();
+            new MyAsyncTask().execute(uri);
         }
         if (requestCode == VIDEO_FROM_CAMERA && resultCode == RESULT_OK && data != null) {
             String[] projection = {MediaStore.Video.Media.DATA};
@@ -348,7 +301,9 @@ public class RetrofitActivity extends AppCompatActivity {
             video_path = cursor.getString(cursor_index);
             tvPath.setText(video_path);
             MediaController media_Controller = new MediaController(RetrofitActivity.this);
-            imgPreView.setVisibility(View.GONE);
+            //imgPreView.setVisibility(View.GONE);
+            imgPreView.setImageBitmap(ThumbnailUtils.createVideoThumbnail(video_path, MediaStore.Video.Thumbnails.MINI_KIND));
+//            imgPreView.setImageBitmap(ThumbnailUtils.createVideoThumbnail("http://jayachandrajc.orgfree.com/practice/video/01_06_2016_11_06_41.MP4", MediaStore.Video.Thumbnails.MINI_KIND));
             videoPerView.setVisibility(View.VISIBLE);
             videoPerView.setMediaController(media_Controller);
             videoPerView.setVideoPath(video_path);
@@ -366,8 +321,7 @@ public class RetrofitActivity extends AppCompatActivity {
                 mp.setDataSource(audio_path);
                 mp.prepare();
                 mp.start();
-            } catch (IllegalArgumentException | SecurityException
-                    | IllegalStateException | IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
@@ -383,16 +337,72 @@ public class RetrofitActivity extends AppCompatActivity {
                 mp.setDataSource(audio_path);
                 mp.prepare();
                 mp.start();
-            } catch (IllegalArgumentException | SecurityException
-                    | IllegalStateException | IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         if (requestCode == DOC && resultCode == RESULT_OK && data != null) {
-            doc_path = data.getData().getPath();
+//            doc_path = data.getData().getPath();
+            Uri uri=data.getData();
+            Log.v("uri",""+uri);
+            Log.v("uri.toString",""+uri.toString());
+            ContentResolver cR = getApplicationContext().getContentResolver();
+            MimeTypeMap mime = MimeTypeMap.getSingleton();
+            String type = mime.getExtensionFromMimeType(cR.getType(uri));
+            Log.v("FileExtension",""+type);
+            doc_path=createDocFile(RetrofitActivity.this,uri,type);
             tvPath.setText(doc_path);
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private String saveImage(Context context, Uri uri) {
+        Bitmap finalBitmap;
+        File file;
+        try {
+            finalBitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri));
+            File folder = new File(Environment.getExternalStorageDirectory().toString() + "/Practice");
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+            file = new File(folder.getAbsolutePath() + "/Image_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".jpg");
+            FileOutputStream out = new FileOutputStream(file);
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 90, out);
+            out.flush();
+            out.close();
+            return file.getAbsolutePath();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private String saveVideo(Context context, Uri uri) {
+        File file = null;
+        try {
+            File folder = new File(Environment.getExternalStorageDirectory().toString() + "/Practice");
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+            file = new File(folder.getAbsolutePath() + "/Video_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".MP4");
+            /*ParcelFileDescriptor parcelFileDescriptor = context.getContentResolver().openFileDescriptor(uri,"r");
+            FileDescriptor fileDescriptor = parcelFileDescriptor.getFileDescriptor();
+            InputStream inputStream = new FileInputStream(fileDescriptor);
+            //Use BufferedInputStream & BufferedOutputStream
+            */
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(context.getContentResolver().openInputStream(uri));
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, false));
+            byte[] buf = new byte[4 * 1024];
+            while (bufferedInputStream.read(buf) != -1) {
+                bufferedOutputStream.write(buf);
+            }
+            bufferedOutputStream.flush();
+            bufferedInputStream.close();
+            bufferedOutputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return file.getAbsolutePath();
     }
 
     private File createImageFile() {
@@ -402,7 +412,7 @@ public class RetrofitActivity extends AppCompatActivity {
             if (!folder.exists()) {
                 folder.mkdir();
             }
-            File mFile = new File(Environment.getExternalStorageDirectory().toString() + "/Practice/Image_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".jpg");
+            //File mFile = new File(Environment.getExternalStorageDirectory().toString() + "/Practice/Image_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".jpg");
             file = new File(folder.getAbsolutePath() + "/Image_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".jpg");
             img_path = file.getAbsolutePath();
         } catch (Exception e) {
@@ -410,6 +420,28 @@ public class RetrofitActivity extends AppCompatActivity {
             Log.v("createImageFileError", "" + e.getMessage());
         }
         return file;
+    }
+    private String createDocFile(Context context , Uri uri,String extension){
+        File file = null;
+        try {
+            File folder = new File(Environment.getExternalStorageDirectory().toString() + "/Practice");
+            if (!folder.exists()) {
+                folder.mkdir();
+            }
+            file = new File(folder.getAbsolutePath() + "/Doc_" + new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + "."+extension);
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(context.getContentResolver().openInputStream(uri));
+            BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(file, false));
+            byte[] buf = new byte[1024];
+            while (bufferedInputStream.read(buf) != -1) {
+                bufferedOutputStream.write(buf);
+            }
+            bufferedOutputStream.flush();
+            bufferedInputStream.close();
+            bufferedOutputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return file.getAbsolutePath();
     }
 
     public void displayImageForPreview(String path) {
@@ -434,91 +466,37 @@ public class RetrofitActivity extends AppCompatActivity {
             imgPreView.setImageBitmap(bmap);*/
     }
 
-    public void getDataUsingRetrofit(String url) {
-        RetrofitService retrofitService = ServiceGenerator.createService(RetrofitService.class);
-//        Call<List<Example>> exampleList = retrofitService.getData(url);
-//        Call<List<Example>> exampleList = retrofitService.getData1(specific_url,String.valueOf(40));
-        Call<List<Example>> exampleList = retrofitService.getDataWithParam(60);
-        exampleList.enqueue(new Callback<List<Example>>() {
-            @Override
-            public void onResponse(Call<List<Example>> call, Response<List<Example>> response) {
-                list.clear();
-                list.addAll(response.body());
-                rcvRetrofitAdapter.notifyDataSetChanged();
-            }
+    class MyAsyncTask extends AsyncTask<Uri, Void, Void> {
 
-            @Override
-            public void onFailure(Call<List<Example>> call, Throwable t) {
-                Log.v("Throwable", "" + t.toString());
-            }
-        });
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            //imgPreView.setVisibility(View.GONE);
+            videoPerView.setVisibility(View.VISIBLE);
+            tvPath.setText("Loading...");
+        }
+
+        @Override
+        protected Void doInBackground(Uri... params) {
+            video_path = saveVideo(getApplicationContext(), params[0]);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            tvPath.setText(video_path);
+            MediaController media_Controller = new MediaController(RetrofitActivity.this);
+            //imgPreView.setVisibility(View.GONE);
+            imgPreView.setImageBitmap(ThumbnailUtils.createVideoThumbnail(video_path, MediaStore.Video.Thumbnails.MINI_KIND));
+            videoPerView.setVisibility(View.VISIBLE);
+            videoPerView.setMediaController(media_Controller);
+            videoPerView.setVideoPath(video_path);
+            videoPerView.start();
+        }
     }
 
-    public void getResponseBody() {
-        RetrofitService retrofitService = ServiceGenerator.createServiceOrgFree(RetrofitService.class);
-        Call<ResponseBody> person = retrofitService.getOrgFreeResponseBody();
-        person.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                try {
-                    Log.v("ResponseBody", "" + response.body().string());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
 
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                Log.v("Throwable", "" + t.getMessage());
-            }
-        });
-
-    }
-
-    public void getOrgFreeData() {
-        RetrofitService retrofitService = ServiceGenerator.createServiceOrgFree(RetrofitService.class);
-//        RetrofitService retrofitService = ServiceGenerator.createServiceAnil(RetrofitService.class);
-        Call<List<Person>> person = retrofitService.getOrgFreeData();
-        person.enqueue(new Callback<List<Person>>() {
-            @Override
-            public void onResponse(Call<List<Person>> call, Response<List<Person>> response) {
-                Log.v("response", "" + response.toString());
-                List<Person> list = response.body();
-                for (int i = 0; i < list.size(); i++) {
-                    /*Log.v("Fname", "" + list.get(i).getFname());
-                    Log.v("Lname", "" + list.get(i).getLname());
-                    Log.v("Age", "" + list.get(i).getAge());
-                    Log.v("Filepath", "" + list.get(i).getFilepath());
-                    Log.v("Dt", "" + list.get(i).getDt());*/
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Person>> call, Throwable t) {
-                Log.v("Throwable", "" + t.getMessage());
-            }
-        });
-    }
-
-    public void getSkinData() {
-        RetrofitService retrofitService = ServiceGenerator.createServiceSudha(RetrofitService.class);
-        Call<List<Skin>> skin = retrofitService.getSkinData();
-        skin.enqueue(new Callback<List<Skin>>() {
-            @Override
-            public void onResponse(Call<List<Skin>> call, Response<List<Skin>> response) {
-                List<Skin> list = response.body();
-                for (int i = 0; i < list.size(); i++) {
-                    Log.v("Fname", "" + list.get(i).getId());
-                    Log.v("Lname", "" + list.get(i).getSkincare());
-                }
-            }
-
-            @Override
-            public void onFailure(Call<List<Skin>> call, Throwable t) {
-                Log.v("Throwable", "" + t.getMessage());
-            }
-        });
-    }
 
     public void fetchPersonData() {
         String id = "1";
@@ -526,7 +504,16 @@ public class RetrofitActivity extends AppCompatActivity {
         String ln = etLn.getText().toString();
         String age = etAge.getText().toString();
 //        String filepath = "File Path: File url";
-        String filepath = img_path;
+        String filepath = null;
+        if (file_type == 1) {
+            filepath = img_path;
+        } else if (file_type == 2) {
+            filepath = video_path;
+        } else if (file_type == 3) {
+            filepath = audio_path;
+        } else if (file_type == 4) {
+            filepath = doc_path;
+        }
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String dt = sdf.format(new Date());
         Log.v("dt", "" + dt);
@@ -573,29 +560,55 @@ public class RetrofitActivity extends AppCompatActivity {
     }
 
     public void callUploadImage(String id, String fname, String lname, String age, String filepath, String dt) {
-
+        /*progressDialog=new ProgressDialog(RetrofitActivity.this);
+        progressDialog.setMessage("Uploading...");
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+        progressDialog.setIndeterminate(false);
+        progressDialog.setProgress(0);
+        progressDialog.show();*/
+        notificationManager=(NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationBuilder=new NotificationCompat.Builder(RetrofitActivity.this);
+        notificationBuilder.setContentTitle("File Upload").setContentText("Uploading...").setSmallIcon(R.drawable.upload);
+        Log.v("filepath", "" + filepath);
         RequestBody mId = RequestBody.create(MediaType.parse("multipart/form-data"), id);
         RequestBody mFname = RequestBody.create(MediaType.parse("multipart/form-data"), fname);
         RequestBody mLname = RequestBody.create(MediaType.parse("multipart/form-data"), lname);
         RequestBody mAge = RequestBody.create(MediaType.parse("multipart/form-data"), age);
 
-        File file = new File(filepath);
-        final RequestBody requestBody = RequestBody.create(MediaType.parse("multipart/form-data"), file);
-        MultipartBody.Part mulPart = MultipartBody.Part.createFormData("filepath", file.getName(), requestBody);
+        final File file = new File(filepath);
+//        final RequestBody requestBody = RequestBody.create(MediaType.parse("multipart/form-data"), file);
+//        MultipartBody.Part mulPart = MultipartBody.Part.createFormData("filepath", file.getName(), requestBody);
+        final ProgressRequestBody progressRequestBody = new ProgressRequestBody(file,uploadCallbacks);
+        MultipartBody.Part mulPart = MultipartBody.Part.createFormData("filepath", file.getName(), progressRequestBody);
 
         RequestBody mDt = RequestBody.create(MediaType.parse("multipart/form-data"), dt);
         RetrofitService retrofitService = ServiceGenerator.createServiceOrgFree(RetrofitService.class);
-        Call<ResponseBody> call = retrofitService.runUploadImage(mId, mFname, mLname, mAge, mulPart, mDt);
+        Call<ResponseBody> call = null;
+        if (file_type == 1) {
+            call = retrofitService.runUploadImage(mId, mFname, mLname, mAge, mulPart, mDt);
+        } else if (file_type == 2) {
+            call = retrofitService.runUploadVideo(mId, mFname, mLname, mAge, mulPart, mDt);
+        } else if (file_type == 3) {
+            call = retrofitService.runUploadAudio(mId, mFname, mLname, mAge, mulPart, mDt);
+        } else if (file_type == 4) {
+            call = retrofitService.runUploadDoc(mId, mFname, mLname, mAge, mulPart, mDt);
+        }
+        assert call != null;
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if (response.isSuccessful()) {
                     try {
+                        notificationBuilder.setContentText("Upload Completed").setProgress(0,0,false);
+                        notificationManager.notify(1,notificationBuilder.build());
                         Log.v("onResponseSuccess", "" + response.body().string());
+                        //file.delete();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 } else {
+                    notificationBuilder.setContentText("Upload Failed").setProgress(0,0,false);
+                    notificationManager.notify(1,notificationBuilder.build());
                     Log.v("onResponseFails", "" + response.body());
                 }
             }
@@ -603,10 +616,122 @@ public class RetrofitActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Log.v("onFailure", "" + t.getMessage());
+                notificationBuilder.setContentText("Failed to Upload").setProgress(0,0,false);
+                notificationManager.notify(1,notificationBuilder.build());
+            }
+        });
+    }
+    UploadCallbacks uploadCallbacks=new UploadCallbacks() {
+        @Override
+        public void onProgressUpdate(int percentage) {
+           // Log.v("onProgressUpdate",""+percentage);
+            //progressDialog.setProgress(percentage);
+            notificationBuilder.setContentText("Uploading...").setProgress(100,percentage,false);
+            notificationManager.notify(1,notificationBuilder.build());
+            if(percentage==100){
+                notificationBuilder.setContentText("Upload Completed").setProgress(100,100,false);
+                notificationManager.notify(1,notificationBuilder.build());
+            }
+        }
+        @Override
+        public void onError() {
+            /*Log.v("onError","onError");
+            progressDialog.setMessage("Error while uploading");
+            progressDialog.dismiss();
+            //Not working
+            */
+        }
+        @Override
+        public void onFinish() {
+            /*Log.v("onFinish","onFinish");
+            progressDialog.setMessage("Success");
+            progressDialog.dismiss();
+            //Not working
+            */
+        }
+    };
+    public void getOrgFreeData() {
+        RetrofitService retrofitService = ServiceGenerator.createServiceOrgFree(RetrofitService.class);
+//        RetrofitService retrofitService = ServiceGenerator.createServiceAnil(RetrofitService.class);
+        Call<List<Person>> person = retrofitService.getOrgFreeData();
+        person.enqueue(new Callback<List<Person>>() {
+            @Override
+            public void onResponse(Call<List<Person>> call, Response<List<Person>> response) {
+                Log.v("response", "" + response.toString());
+                List<Person> list = response.body();
+                for (int i = 0; i < list.size(); i++) {
+                    Log.v("Fname", "" + list.get(i).getFname());
+                    Log.v("Lname", "" + list.get(i).getLname());
+                    Log.v("Age", "" + list.get(i).getAge());
+                    Log.v("Filepath", "" + list.get(i).getFilepath());
+                    Log.v("Dt", "" + list.get(i).getDt());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Person>> call, Throwable t) {
+                Log.v("Throwable", "" + t.getMessage());
+            }
+        });
+    }
+    public void getDataUsingRetrofit(String url) {
+        RetrofitService retrofitService = ServiceGenerator.createService(RetrofitService.class);
+//        Call<List<Example>> exampleList = retrofitService.getData(url);
+//        Call<List<Example>> exampleList = retrofitService.getData1(specific_url,String.valueOf(40));
+        Call<List<Example>> exampleList = retrofitService.getDataWithParam(60);
+        exampleList.enqueue(new Callback<List<Example>>() {
+            @Override
+            public void onResponse(Call<List<Example>> call, Response<List<Example>> response) {
+                list.clear();
+                list.addAll(response.body());
+                rcvRetrofitAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onFailure(Call<List<Example>> call, Throwable t) {
+                Log.v("Throwable", "" + t.toString());
             }
         });
     }
 
+    public void getResponseBody() {
+        RetrofitService retrofitService = ServiceGenerator.createServiceOrgFree(RetrofitService.class);
+        Call<ResponseBody> person = retrofitService.getOrgFreeResponseBody();
+        person.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                try {
+                    Log.v("ResponseBody", "" + response.body().string());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.v("Throwable", "" + t.getMessage());
+            }
+        });
+    }
+    public void getSkinData() {
+        RetrofitService retrofitService = ServiceGenerator.createServiceSudha(RetrofitService.class);
+        Call<List<Skin>> skin = retrofitService.getSkinData();
+        skin.enqueue(new Callback<List<Skin>>() {
+            @Override
+            public void onResponse(Call<List<Skin>> call, Response<List<Skin>> response) {
+                List<Skin> list = response.body();
+                for (int i = 0; i < list.size(); i++) {
+                    Log.v("Fname", "" + list.get(i).getId());
+                    Log.v("Lname", "" + list.get(i).getSkincare());
+                }
+            }
+
+            @Override
+            public void onFailure(Call<List<Skin>> call, Throwable t) {
+                Log.v("Throwable", "" + t.getMessage());
+            }
+        });
+    }
     public void callInsertFields(String id, String fname, String lname, String age, String filepath, String dt) {
         RetrofitService retrofitService = ServiceGenerator.createServiceOrgFree(RetrofitService.class);
         Call<ResponseBody> call = retrofitService.runInsertFields(id, fname, lname, age, filepath, dt);

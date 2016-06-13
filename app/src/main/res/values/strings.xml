@@ -9,4 +9,5 @@
     <string name="imagea">imageA</string>
     <string name="imageb">imageB</string>
     <string name="imagec">imageC</string>
+    <string name="title_activity_arc_menu">ArcMenuActivity</string>
 </resources>
